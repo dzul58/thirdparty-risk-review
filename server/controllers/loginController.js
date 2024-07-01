@@ -33,11 +33,11 @@ class LoginController {
       const { username, password, cpdt_name } = req.body;
 
       if (!username || !password || !cpdt_name) {
-        return res.status(400).json({ error: "Username, password, and cpdt_name are required" });
+        return res.status(400).json({ error: "Username, password, and vendor are required" });
       }
 
       if (username.length > 50 || cpdt_name.length > 255) {
-        return res.status(400).json({ error: "Username or cpdt_name exceeds maximum length" });
+        return res.status(400).json({ error: "Username or vendor exceeds maximum length" });
       }
 
       const hashedPassword = createHash(password);

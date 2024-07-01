@@ -16,6 +16,7 @@ app.use(express.json());
 
 // app.use('/upload_images', express.static('/home/web/upload_images'));
 
+// app.get('/auto-login', LoginController.autoLogin);
 app.post(`/api/create-vendor-user`, LoginController.createVendorAccount)
 app.post(`/api/login-vendor`, LoginController.login);
 
@@ -25,5 +26,5 @@ app.get(`/api/ticket_thirdparty`, VendorController.getAllTicketThirdParty)
 app.get(`/api/ticket_thirdpartyclean`, VendorController.getAllTicketThirdPartyClean)
 
 app.listen(port, () => {
-  console.log(`NISA app listening on port ${port}`);
+  console.log(`app listening on port ${port}`);
 });
