@@ -63,6 +63,7 @@ class LoginController {
     }
   }
 
+  
   // static async autoLogin(req, res, next) {
   //   try {
   //     const { username, password } = req.query;
