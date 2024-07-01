@@ -1,5 +1,6 @@
 const { compareTextWithHash, createHash } = require("../helpers/bcrypt");
 const { signToken } = require("../helpers/jwt");
+const poolNisa = require('../config/configNisa');
 const pool = require('../config/config');
 
 class LoginController {
@@ -63,7 +64,7 @@ class LoginController {
     }
   }
 
-  
+
   // static async autoLogin(req, res, next) {
   //   try {
   //     const { username, password } = req.query;

@@ -4,7 +4,7 @@ const port = 8000;
 const cors = require('cors');
 const LoginController = require('./controllers/loginController');
 const authentication = require('./middlewares/authentication');
-const TicketController = require('./controllers/ticketController');
+const VendorController = require('./controllers/vendorController');
 
 app.use(cors({
   origin: ['http://192.168.202.166:5173', 'http://localhost:5173'],
@@ -16,12 +16,13 @@ app.use(express.json());
 
 // app.use('/upload_images', express.static('/home/web/upload_images'));
 
-app.post(`/api/login`, LoginController.login);
-app.post(`/api/create-user`, LoginController.createVendorAccount)
+app.post(`/api/create-vendor-user`, LoginController.createVendorAccount)
+app.post(`/api/login-vendor`, LoginController.login);
 
 app.use(authentication);
 
-app.get(`/api/ticket_thirdpartyclean`, TicketController.getAllVendorTicket)
+app.get(`/api/ticket_thirdparty`, VendorController.getAllTicketThirdParty)
+app.get(`/api/ticket_thirdpartyclean`, VendorController.getAllTicketThirdPartyClean)
 
 app.listen(port, () => {
   console.log(`NISA app listening on port ${port}`);
