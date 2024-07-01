@@ -16,7 +16,7 @@ const authentication = async (req, res, next) => {
     }
 
     const jwtPayload = verifyToken(accessToken);
-    const result = await pool.query('SELECT * FROM vendor_user_accounts WHERE username = $1', [username]);
+    const result = await pool.query('SELECT * FROM vendor_user_accounts WHERE username = $1', [jwtPayload.username]);
     const user = result.rows[0];
 
     if (!user) {
@@ -28,7 +28,7 @@ const authentication = async (req, res, next) => {
       vendor: user.cpdt_name 
     };
 
-    console.log(req.userAccount, "ini isinya");
+    // console.log(req.userAccount, "ini isinya");
 
     next();
   } catch (error) {
