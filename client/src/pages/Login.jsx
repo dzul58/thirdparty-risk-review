@@ -48,7 +48,7 @@ const Login = () => {
       <div className="relative py-3 sm:w-96 mx-auto text-center">
         <span className="text-2xl font-light">Moving Address Homepass</span>
         <div className="mt-4 bg-white shadow-md rounded-lg text-left">
-          <div className="h-2 bg-purple-400 rounded-t-md"></div>
+          <div className="h-2 bg-sky-400 rounded-t-md"></div>
           <div className="px-8 py-6">
             <form onSubmit={handleLogin}>
               <label className="block font-semibold">Username</label>
@@ -70,7 +70,7 @@ const Login = () => {
               <div className="flex justify-between items-baseline">
                 <button
                   type="submit"
-                  className="mt-4 bg-purple-500 text-white py-2 px-6 rounded-md hover:bg-purple-600"
+                  className="mt-4 bg-sky-500 text-white py-2 px-6 rounded-md hover:bg-sky-600"
                 >
                   Login
                 </button>
