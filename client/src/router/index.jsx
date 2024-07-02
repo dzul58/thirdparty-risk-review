@@ -1,5 +1,5 @@
 import { createBrowserRouter, redirect } from 'react-router-dom';
-import Home from '../pages/Home';
+import Summary from '../pages/Summary';
 import Login from '../pages/Login';
 import Parent from '../pages/Parent';
 
@@ -38,7 +38,7 @@ const router = createBrowserRouter([
       children: [
         {
           path: "/",
-          element: <Home />,
+          element: <Summary />,
         },
       ],
       // loader: aunthBeforeLogin,

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
-const Home = () => {
+const Summary = () => {
 
   return (
     <div className="overflow-x-auto p-5 bg-slate-50">
@@ -12,4 +12,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Summary;

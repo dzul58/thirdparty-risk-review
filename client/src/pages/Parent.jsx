@@ -6,8 +6,8 @@ import Sidebar from '../components/Sidebar';
 const Parent = () => {
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 ">
-      <Navbar />
       <Sidebar />
+      <Navbar />
       <div className="flex-1 p-2">
         <Outlet />
       </div>
