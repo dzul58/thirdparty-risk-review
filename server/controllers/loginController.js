@@ -18,10 +18,10 @@ class LoginController {
       if (!user || !compareTextWithHash(password, user.password)) {
         return res.status(401).json({ error: "Invalid username or password" });
       }
-
+      
       const payload = { vendor: user.cpdt_name, username: user.username };
       const accessToken = signToken(payload);
-
+      
       res.json({ access_token: accessToken });
     } catch (error) {
       next(error);

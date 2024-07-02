@@ -4,7 +4,7 @@ const pool = require("../config/config");
 const authentication = async (req, res, next) => {
   try {
     const { authorization } = req.headers;
-
+      
     if (!authorization) {
       throw new Error('Authorization header is missing');
     }
@@ -27,8 +27,6 @@ const authentication = async (req, res, next) => {
       username: user.username,
       vendor: user.cpdt_name 
     };
-
-    // console.log(req.userAccount, "ini isinya");
 
     next();
   } catch (error) {
