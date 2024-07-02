@@ -5,21 +5,21 @@ import Parent from '../pages/Parent';
 
 
 
-// const aunthBeforeLogin = () => {
-//   const access_token = localStorage.access_token;
-//   if (!access_token) {
-//     throw redirect("/login");
-//   }
-//   return null;
-// };
+const aunthBeforeLogin = () => {
+  const access_token = localStorage.access_token;
+  if (!access_token) {
+    throw redirect("/login");
+  }
+  return null;
+};
 
-// const aunthAfterLogin = () => {
-//   const access_token = localStorage.access_token;
-//   if (access_token) {
-//     throw redirect("/");
-//   }
-//   return null;
-// };
+const aunthAfterLogin = () => {
+  const access_token = localStorage.access_token;
+  if (access_token) {
+    throw redirect("/");
+  }
+  return null;
+};
 
 
 const router = createBrowserRouter([
@@ -31,7 +31,7 @@ const router = createBrowserRouter([
     {
       path: "/login",
       element: <Login />,
-      // loader: aunthAfterLogin,
+      loader: aunthAfterLogin,
     },
     {
       element: <Parent />,
@@ -41,7 +41,7 @@ const router = createBrowserRouter([
           element: <Summary />,
         },
       ],
-      // loader: aunthBeforeLogin,
+      loader: aunthBeforeLogin,
     },
   ]);
   

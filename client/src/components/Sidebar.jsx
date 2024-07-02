@@ -5,8 +5,7 @@ const Sidebar = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Implement logout here
-    // Example: localStorage.removeItem('access_token');
+    localStorage.clear();
     navigate('/login');
   };
 

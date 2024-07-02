@@ -5,11 +5,13 @@ import Sidebar from '../components/Sidebar';
 
 const Parent = () => {
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 ">
+    <div className="flex min-h-screen bg-slate-50">
       <Sidebar />
-      <Navbar />
-      <div className="flex-1 p-2">
-        <Outlet />
+      <div className="flex flex-col flex-1">
+        <Navbar />
+        <div className="flex-1 p-6 mt-16 ml-64">
+          <Outlet />
+        </div>
       </div>
     </div>
   );

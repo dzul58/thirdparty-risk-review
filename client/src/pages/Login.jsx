@@ -20,25 +20,19 @@ const Login = () => {
     e.preventDefault();
     try {
       const dataLogin = { username, password };
-      const response = await axios.post(`http://localhost:8000/api/login-vendor`, dataLogin);
-      console.log(response, "ini resphone");
-      // Periksa apakah response.data ada
-      if (response && response.data && response.data.access_token) {
-        localStorage.setItem("access_token", response.data.access_token);
-        console.log(response.data.access_token);
-        Swal.fire({
-          icon: "success",
-          title: "Success Login",
-        });
-        navigate("/");
-      } else {
-        throw new Error("Invalid response from server");
-      }
+      let { data } = await axios.post(`http://localhost:8000/api/login-vendor`, dataLogin);
+      localStorage.setItem("access_token", data.access_token);
+        console.log(data.access_token);
+      Swal.fire({
+        icon: "success",
+        title: "Success Login",
+      });
+
+      navigate("/");
     } catch (error) {
-      console.error("Login error:", error);
       Swal.fire({
         icon: "error",
-        title: error.response?.data?.error || "An error occurred during login",
+        title: error.response.data.error,
       });
     }
   }

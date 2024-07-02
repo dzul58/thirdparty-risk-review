@@ -1,13 +1,233 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom';
-import Swal from 'sweetalert2';
 
 const Summary = () => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchParams, setSearchParams] = useState({
+    Month: '',
+    msar_area_name: '',
+    Link: '',
+    mlink_cid_main: '',
+  });
+  const [pagination, setPagination] = useState({
+    totalItems: 0,
+    totalPages: 0,
+    currentPage: 1,
+    itemsPerPage: 20,
+  });
+
+  const fetchData = async (page = 1) => {
+    setLoading(true);
+    try {
+      const response = await axios.get('http://localhost:8000/api/ticket_thirdpartyclean', {
+        headers: {
+          Authorization: `Bearer ${localStorage.access_token}`,
+        },
+        params: {
+          ...searchParams,
+          page: page,
+          limit: pagination.itemsPerPage
+        }
+      });
+      setData(response.data.data);
+      setPagination(response.data.pagination);
+      setLoading(false);
+    } catch (err) {
+      setError('Error fetching data');
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    fetchData(1);
+  };
+
+  const handleInputChange = (e) => {
+    setSearchParams({ ...searchParams, [e.target.name]: e.target.value });
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      fetchData(newPage);
+    }
+  };
+
+  if (error) return <div className="text-center text-red-500 mt-4">{error}</div>;
 
   return (
-    <div className="overflow-x-auto p-5 bg-slate-50">
-        <h1>teeeedss</h1>
+    <div className="container mx-auto p-6">
+      <form onSubmit={handleSearch} className="mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label htmlFor="Month" className="block text-sm font-medium text-gray-700">Month</label>
+            <input
+              type="text"
+              name="Month"
+              id="Month"
+              value={searchParams.Month}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            />
+          </div>
+          <div>
+            <label htmlFor="msar_area_name" className="block text-sm font-medium text-gray-700">Area</label>
+            <input
+              type="text"
+              name="msar_area_name"
+              id="msar_area_name"
+              value={searchParams.msar_area_name}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            />
+          </div>
+          <div>
+            <label htmlFor="Link" className="block text-sm font-medium text-gray-700">Link</label>
+            <input
+              type="text"
+              name="Link"
+              id="Link"
+              value={searchParams.Link}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            />
+          </div>
+          <div>
+            <label htmlFor="mlink_cid_main" className="block text-sm font-medium text-gray-700">CID</label>
+            <input
+              type="text"
+              name="mlink_cid_main"
+              id="mlink_cid_main"
+              value={searchParams.mlink_cid_main}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            />
+          </div>
+        </div>
+        <div className="mt-4">
+          <button type="submit" className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            Search
+          </button>
+        </div>
+      </form>
+
+      {loading ? (
+        <div className="text-center">Loading...</div>
+      ) : (
+        <>
+          <div className="overflow-x-auto bg-white shadow-md rounded my-6">
+            <table className="min-w-max w-full table-auto">
+              <thead>
+                <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                  <th className="py-3 px-6 text-left">Month</th>
+                  <th className="py-3 px-6 text-left">Area</th>
+                  <th className="py-3 px-6 text-left">Link</th>
+                  <th className="py-3 px-6 text-left">Provider</th>
+                  <th className="py-3 px-6 text-left">CID</th>
+                  <th className="py-3 px-6 text-center">MTTR (sec)</th>
+                  <th className="py-3 px-6 text-center">Event Count</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-600 text-sm font-light">
+                {data.map((item, index) => (
+                  <tr key={index} className="border-b border-gray-200 hover:bg-gray-100">
+                    <td className="py-3 px-6 text-left whitespace-nowrap">
+                      <div className="flex items-center">
+                        <span className="font-medium">{item.Month}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-6 text-left">
+                      <div className="flex items-center">
+                        <span>{item.msar_area_name}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-6 text-left">
+                      <div className="flex items-center">
+                        <span>{item.Link}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-6 text-left">
+                      <div className="flex items-center">
+                        <span>{item.cpdt_name}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-6 text-left">
+                      <div className="flex items-center">
+                        <span>{item.mlink_cid_main}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-6 text-center">
+                      <span>{item['MTTR(sec)']}</span>
+                    </td>
+                    <td className="py-3 px-6 text-center">
+                      <span>{item['Event Count']}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+            <div className="flex flex-1 justify-between sm:hidden">
+              <button
+                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                disabled={pagination.currentPage === 1}
+                className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                disabled={pagination.currentPage === pagination.totalPages}
+                className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{(pagination.currentPage - 1) * pagination.itemsPerPage + 1}</span> to <span className="font-medium">{Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)}</span> of{' '}
+                  <span className="font-medium">{pagination.totalItems}</span> results
+                </p>
+              </div>
+              <div>
+                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <button
+                    onClick={() => handlePageChange(pagination.currentPage - 1)}
+                    disabled={pagination.currentPage === 1}
+                    className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                  >
+                    <span className="sr-only">Previous</span>
+                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  {/* You can add page numbers here if needed */}
+                  <button
+                    onClick={() => handlePageChange(pagination.currentPage + 1)}
+                    disabled={pagination.currentPage === pagination.totalPages}
+                    className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                  >
+                    <span className="sr-only">Next</span>
+                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
