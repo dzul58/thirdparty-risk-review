@@ -7,7 +7,7 @@ const authentication = require('./middlewares/authentication');
 const VendorController = require('./controllers/vendorController');
 
 app.use(cors({
-  origin: ['http://192.168.202.166:5173', 'http://localhost:5173'],
+  origin: ['http://192.168.202.166:5173', 'http://localhost:3000'],
   credentials: true
 }));
 
