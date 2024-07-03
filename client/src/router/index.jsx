@@ -2,6 +2,7 @@ import { createBrowserRouter, redirect } from 'react-router-dom';
 import Summary from '../pages/Summary';
 import Login from '../pages/Login';
 import Parent from '../pages/Parent';
+import LinkDetail from '../pages/Linkdetail';
 
 
 
@@ -37,8 +38,12 @@ const router = createBrowserRouter([
       element: <Parent />,
       children: [
         {
-          path: "/",
+          path: "/summary",
           element: <Summary />,
+        },
+        {
+          path: "/linkdetail",
+          element: <LinkDetail />,
         },
       ],
       loader: aunthBeforeLogin,

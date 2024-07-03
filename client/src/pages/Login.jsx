@@ -28,7 +28,7 @@ const Login = () => {
         title: "Success Login",
       });
 
-      navigate("/");
+      navigate("/summary");
     } catch (error) {
       Swal.fire({
         icon: "error",

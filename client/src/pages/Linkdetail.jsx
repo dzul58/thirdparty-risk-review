@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 
 const LinkDetail = () => {
@@ -6,43 +6,49 @@ const LinkDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchParams, setSearchParams] = useState({
-    Month: '',
     msar_area_name: '',
     Link: '',
+    cpdt_name: '',
     mlink_cid_main: '',
+    tpty_third_no: '',
+    tpty_service: '',
+    tpty_progress: '',
   });
   const [pagination, setPagination] = useState({
     totalItems: 0,
     totalPages: 0,
     currentPage: 1,
-    itemsPerPage: 20,
+    itemsPerPage: 10,
   });
 
-  const fetchData = async (page = 1) => {
+  const fetchData = useCallback(async (page = 1) => {
     setLoading(true);
+    const url = 'http://localhost:8000/api/ticket_thirdparty';
+    const params = {
+      ...searchParams,
+      page: page,
+      limit: pagination.itemsPerPage
+    };
     try {
-      const response = await axios.get('http://localhost:8000/api/ticket_thirdparty', {
+      const response = await axios.get(url, {
         headers: {
           Authorization: `Bearer ${localStorage.access_token}`,
         },
-        params: {
-          ...searchParams,
-          page: page,
-          limit: pagination.itemsPerPage
-        }
+        params: params
       });
       setData(response.data.data);
       setPagination(response.data.pagination);
       setLoading(false);
     } catch (err) {
+      console.error('Error fetching data:', err);
       setError('Error fetching data');
       setLoading(false);
     }
-  };
+  }, [searchParams, pagination.itemsPerPage]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -59,63 +65,76 @@ const LinkDetail = () => {
     }
   };
 
+  const resetSearch = () => {
+    setSearchParams({
+      msar_area_name: '',
+      Link: '',
+      cpdt_name: '',
+      mlink_cid_main: '',
+      tpty_third_no: '',
+      tpty_service: '',
+      tpty_progress: '',
+    });
+    fetchData(1);
+  };
+
   if (error) return <div className="text-center text-red-500 mt-4">{error}</div>;
+
+  const formatMTTR = (seconds) => {
+    const days = Math.floor(seconds / (24 * 60 * 60));
+    const hours = Math.floor((seconds % (24 * 60 * 60)) / (60 * 60));
+    const minutes = Math.floor((seconds % (60 * 60)) / 60);
+    const remainingSeconds = seconds % 60;
+  
+    let result = '';
+    if (days > 0) result += `${days}d `;
+    if (hours > 0) result += `${hours}h `;
+    if (minutes > 0) result += `${minutes}m `;
+    result += `${remainingSeconds}s`; 
+  
+    return result.trim();
+  };
 
   return (
     <div className="container mx-auto p-6">
-      <form onSubmit={handleSearch} className="mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label htmlFor="Month" className="block text-sm font-medium text-gray-700">Month</label>
-            <input
-              type="text"
-              name="Month"
-              id="Month"
-              value={searchParams.Month}
-              onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            />
+      <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+        <h2 className="text-2xl font-semibold mb-4">Search Filters</h2>
+        <form onSubmit={handleSearch}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+            {Object.keys(searchParams).map((key) => (
+              <div key={key}>
+                <label htmlFor={key} className="block text-sm font-medium text-gray-700 mb-1">
+                  {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </label>
+                <input
+                  type="text"
+                  name={key}
+                  id={key}
+                  value={searchParams[key]}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder={`Enter ${key.replace(/_/g, ' ')}`}
+                />
+              </div>
+            ))}
           </div>
-          <div>
-            <label htmlFor="msar_area_name" className="block text-sm font-medium text-gray-700">Area</label>
-            <input
-              type="text"
-              name="msar_area_name"
-              id="msar_area_name"
-              value={searchParams.msar_area_name}
-              onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            />
+          <div className="flex justify-end space-x-2">
+            <button
+              type="button"
+              onClick={resetSearch}
+              className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Reset
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Search
+            </button>
           </div>
-          <div>
-            <label htmlFor="Link" className="block text-sm font-medium text-gray-700">Link</label>
-            <input
-              type="text"
-              name="Link"
-              id="Link"
-              value={searchParams.Link}
-              onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            />
-          </div>
-          <div>
-            <label htmlFor="mlink_cid_main" className="block text-sm font-medium text-gray-700">CID</label>
-            <input
-              type="text"
-              name="mlink_cid_main"
-              id="mlink_cid_main"
-              value={searchParams.mlink_cid_main}
-              onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            />
-          </div>
-        </div>
-        <div className="mt-4">
-          <button type="submit" className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-            Search
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
 
       {loading ? (
         <div className="text-center">Loading...</div>
@@ -125,48 +144,48 @@ const LinkDetail = () => {
             <table className="min-w-max w-full table-auto">
               <thead>
                 <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                  <th className="py-3 px-6 text-left">Month</th>
                   <th className="py-3 px-6 text-left">Area</th>
                   <th className="py-3 px-6 text-left">Link</th>
                   <th className="py-3 px-6 text-left">Provider</th>
                   <th className="py-3 px-6 text-left">CID</th>
-                  <th className="py-3 px-6 text-center">MTTR (sec)</th>
-                  <th className="py-3 px-6 text-center">Event Count</th>
+                  <th className="py-3 px-6 text-left">Ticket No</th>
+                  <th className="py-3 px-6 text-left">Service</th>
+                  <th className="py-3 px-6 text-left">Progress</th>
+                  <th className="py-3 px-6 text-center">MTTR</th>
+                  <th className="py-3 px-6 text-center">Hold Time</th>
+                  <th className="py-3 px-6 text-center">MTTR Final</th>
+                  <th className="py-3 px-6 text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="text-gray-600 text-sm font-light">
                 {data.map((item, index) => (
                   <tr key={index} className="border-b border-gray-200 hover:bg-gray-100">
                     <td className="py-3 px-6 text-left whitespace-nowrap">
-                      <div className="flex items-center">
-                        <span className="font-medium">{item.Month}</span>
-                      </div>
+                      <span className="font-medium">{item.msar_area_name}</span>
                     </td>
                     <td className="py-3 px-6 text-left">
-                      <div className="flex items-center">
-                        <span>{item.msar_area_name}</span>
-                      </div>
+                      <span>{item.Link}</span>
                     </td>
                     <td className="py-3 px-6 text-left">
-                      <div className="flex items-center">
-                        <span>{item.Link}</span>
-                      </div>
+                      <span>{item.cpdt_name}</span>
                     </td>
                     <td className="py-3 px-6 text-left">
-                      <div className="flex items-center">
-                        <span>{item.cpdt_name}</span>
-                      </div>
+                      <span>{item.mlink_cid_main}</span>
                     </td>
                     <td className="py-3 px-6 text-left">
-                      <div className="flex items-center">
-                        <span>{item.mlink_cid_main}</span>
-                      </div>
+                      <span>{item.tpty_third_no}</span>
+                    </td>
+                    <td className="py-3 px-6 text-left">
+                      <span>{item.tpty_service}</span>
+                    </td>
+                    <td className="py-3 px-6 text-left">
+                      <span>{item.tpty_progress}</span>
                     </td>
                     <td className="py-3 px-6 text-center">
-                      <span>{item['MTTR(sec)']}</span>
+                      <span>{formatMTTR(item['MTTR(sec)'])}</span>
                     </td>
                     <td className="py-3 px-6 text-center">
-                      <span>{item['Event Count']}</span>
+                      <span>{item?.['Hold(s)'] ?? 'N/A'}</span>
                     </td>
                   </tr>
                 ))}
@@ -211,7 +230,6 @@ const LinkDetail = () => {
                       <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
                     </svg>
                   </button>
-                  {/* You can add page numbers here if needed */}
                   <button
                     onClick={() => handlePageChange(pagination.currentPage + 1)}
                     disabled={pagination.currentPage === pagination.totalPages}

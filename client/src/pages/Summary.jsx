@@ -78,6 +78,21 @@ const Summary = () => {
 
   if (error) return <div className="text-center text-red-500 mt-4">{error}</div>;
 
+  const formatMTTR = (seconds) => {
+    const days = Math.floor(seconds / (24 * 60 * 60));
+    const hours = Math.floor((seconds % (24 * 60 * 60)) / (60 * 60));
+    const minutes = Math.floor((seconds % (60 * 60)) / 60);
+    const remainingSeconds = seconds % 60;
+  
+    let result = '';
+    if (days > 0) result += `${days}d `;
+    if (hours > 0) result += `${hours}h `;
+    if (minutes > 0) result += `${minutes}m `;
+    result += `${remainingSeconds}s`; 
+  
+    return result.trim();
+  };
+
   return (
     <div className="container mx-auto p-6">
       <div className="bg-white shadow-md rounded-lg p-6 mb-6">
@@ -197,7 +212,7 @@ const Summary = () => {
                       </div>
                     </td>
                     <td className="py-3 px-6 text-center">
-                      <span>{item['MTTR(sec)']}</span>
+                      <span>{formatMTTR(item['MTTR(sec)'])}</span>
                     </td>
                     <td className="py-3 px-6 text-center">
                       <span>{item['Event Count']}</span>
