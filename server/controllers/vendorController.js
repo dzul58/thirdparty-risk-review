@@ -1,4 +1,5 @@
 const pool = require('../config/config');
+const moment = require('moment');
 
 class VendorController {
 
@@ -185,6 +186,59 @@ class VendorController {
             res.status(500).json({ error: 'Internal server error' });
         }
     }
+
+    static async createTicketComplaint(req, res, next) {
+        try {
+          const { tpty_third_no } = req.params;
+          const { mlink_cid_main, Month, MTTR, photo, reason } = req.body;
+    
+          // Validasi input
+          if (!mlink_cid_main || !Month || !MTTR || !photo || !reason) {
+            return res.status(400).json({ error: 'All fields are required' });
+          }
+    
+          // Generate id_ticket_complaint
+          const today = moment();
+          const dateStr = today.format('YYYYMMDD');
+          
+          // Get the latest ticket number for today
+          const getLatestTicketQuery = `
+            SELECT id_ticket_complaint 
+            FROM ticket_complaint 
+            WHERE id_ticket_complaint LIKE $1 
+            ORDER BY id_ticket_complaint DESC 
+            LIMIT 1
+          `;
+          const latestTicket = await pool.query(getLatestTicketQuery, [`TT${dateStr}%`]);
+          
+          let ticketNumber = '01';
+          if (latestTicket.rows.length > 0) {
+            const lastNumber = parseInt(latestTicket.rows[0].id_ticket_complaint.slice(-2));
+            ticketNumber = (lastNumber + 1).toString().padStart(2, '0');
+          }
+    
+          const id_ticket_complaint = `TT${dateStr}${ticketNumber}`;
+    
+          const insertQuery = `
+            INSERT INTO ticket_complaint (
+              id_ticket_complaint, mlink_cid_main, tpty_third_no, "Month", "MTTR(sec)", photo, reason, status
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING *
+          `;
+    
+          const values = [id_ticket_complaint, mlink_cid_main, tpty_third_no, Month, MTTR, photo, reason, 'waiting'];
+    
+          const result = await pool.query(insertQuery, values);
+    
+          res.status(201).json({
+            message: 'Ticket complaint created successfully',
+            data: result.rows[0]
+          });
+        } catch (error) {
+          console.error('Error in createTicketComplaint:', error);
+          res.status(500).json({ error: 'Internal server error' });
+        }
+      }
 }
 
 module.exports = VendorController;

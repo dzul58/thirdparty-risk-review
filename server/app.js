@@ -24,6 +24,7 @@ app.use(authentication);
 
 app.get(`/api/ticket_thirdparty`, VendorController.getAllTicketThirdParty)
 app.get(`/api/ticket_thirdpartyclean`, VendorController.getAllTicketThirdPartyClean)
+app.post('/api/complaint/:tpty_third_no', VendorController.createTicketComplaint);
 
 app.listen(port, () => {
   console.log(`app listening on port ${port}`);
