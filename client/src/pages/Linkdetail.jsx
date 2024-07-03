@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const Summary = () => {
+const LinkDetail = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -18,41 +18,34 @@ const Summary = () => {
     itemsPerPage: 20,
   });
 
-  const fetchData = useCallback(async (page = 1) => {
+  const fetchData = async (page = 1) => {
     setLoading(true);
-    const url = 'http://localhost:8000/api/ticket_thirdpartyclean';
-    const params = {
-      ...searchParams,
-      page: page,
-      limit: pagination.itemsPerPage
-    };
-    console.log('Fetching data from:', url);
-    console.log('With params:', params);
     try {
-      const response = await axios.get(url, {
+      const response = await axios.get('http://localhost:8000/api/ticket_thirdparty', {
         headers: {
           Authorization: `Bearer ${localStorage.access_token}`,
         },
-        params: params
+        params: {
+          ...searchParams,
+          page: page,
+          limit: pagination.itemsPerPage
+        }
       });
-      console.log('Response:', response.data);
       setData(response.data.data);
       setPagination(response.data.pagination);
       setLoading(false);
     } catch (err) {
-      console.error('Error fetching data:', err);
       setError('Error fetching data');
       setLoading(false);
     }
-  }, [searchParams, pagination.itemsPerPage]); // Dependensi untuk useCallback
+  };
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    console.log('Search params:', searchParams);
     fetchData(1);
   };
 
@@ -66,90 +59,63 @@ const Summary = () => {
     }
   };
 
-  const resetSearch = () => {
-    setSearchParams({
-      Month: '',
-      msar_area_name: '',
-      Link: '',
-      mlink_cid_main: '',
-    });
-    fetchData(1);
-  };
-
   if (error) return <div className="text-center text-red-500 mt-4">{error}</div>;
 
   return (
     <div className="container mx-auto p-6">
-      <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-        <h2 className="text-2xl font-semibold mb-4">Search Filters</h2>
-        <form onSubmit={handleSearch}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-            <div>
-              <label htmlFor="Month" className="block text-sm font-medium text-gray-700 mb-1">Month</label>
-              <input
-                type="text"
-                name="Month"
-                id="Month"
-                value={searchParams.Month}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Enter month"
-              />
-            </div>
-            <div>
-              <label htmlFor="msar_area_name" className="block text-sm font-medium text-gray-700 mb-1">Area</label>
-              <input
-                type="text"
-                name="msar_area_name"
-                id="msar_area_name"
-                value={searchParams.msar_area_name}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Enter area name"
-              />
-            </div>
-            <div>
-              <label htmlFor="Link" className="block text-sm font-medium text-gray-700 mb-1">Link</label>
-              <input
-                type="text"
-                name="Link"
-                id="Link"
-                value={searchParams.Link}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Enter link"
-              />
-            </div>
-            <div>
-              <label htmlFor="mlink_cid_main" className="block text-sm font-medium text-gray-700 mb-1">CID</label>
-              <input
-                type="text"
-                name="mlink_cid_main"
-                id="mlink_cid_main"
-                value={searchParams.mlink_cid_main}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Enter CID"
-              />
-            </div>
+      <form onSubmit={handleSearch} className="mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label htmlFor="Month" className="block text-sm font-medium text-gray-700">Month</label>
+            <input
+              type="text"
+              name="Month"
+              id="Month"
+              value={searchParams.Month}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            />
           </div>
-          <div className="flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={resetSearch}
-              className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Reset
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Search
-            </button>
+          <div>
+            <label htmlFor="msar_area_name" className="block text-sm font-medium text-gray-700">Area</label>
+            <input
+              type="text"
+              name="msar_area_name"
+              id="msar_area_name"
+              value={searchParams.msar_area_name}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            />
           </div>
-        </form>
-      </div>
+          <div>
+            <label htmlFor="Link" className="block text-sm font-medium text-gray-700">Link</label>
+            <input
+              type="text"
+              name="Link"
+              id="Link"
+              value={searchParams.Link}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            />
+          </div>
+          <div>
+            <label htmlFor="mlink_cid_main" className="block text-sm font-medium text-gray-700">CID</label>
+            <input
+              type="text"
+              name="mlink_cid_main"
+              id="mlink_cid_main"
+              value={searchParams.mlink_cid_main}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            />
+          </div>
+        </div>
+        <div className="mt-4">
+          <button type="submit" className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            Search
+          </button>
+        </div>
+      </form>
 
       {loading ? (
         <div className="text-center">Loading...</div>
@@ -266,4 +232,4 @@ const Summary = () => {
   );
 };
 
-export default Summary;
+export default LinkDetail;
