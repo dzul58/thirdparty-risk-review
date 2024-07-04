@@ -189,7 +189,7 @@ class VendorController {
 
     static async createTicketComplaint(req, res, next) {
         try {
-          const { tpty_third_no, isilink, isicicd } = req.params;
+          const { tpty_third_no, Link, mlink_cid_main } = req.params;
           const { MTTR, photo, reason } = req.body;
       
           // Validasi input
