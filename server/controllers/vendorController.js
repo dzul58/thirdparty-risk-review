@@ -259,7 +259,7 @@ class VendorController {
         try {
           await client.query('BEGIN');
       
-          const { id_ticket_complaint } = req.params;
+          const { tpty_third_no } = req.params;
           const { status } = req.body;
       
           if (!['accepted', 'rejected'].includes(status)) {
@@ -270,10 +270,10 @@ class VendorController {
           const updateComplaintQuery = `
             UPDATE ticket_complaint
             SET status = $1
-            WHERE id_ticket_complaint = $2
+            WHERE tpty_third_no = $2
             RETURNING *
           `;
-          const complaintResult = await client.query(updateComplaintQuery, [status, id_ticket_complaint]);
+          const complaintResult = await client.query(updateComplaintQuery, [status, tpty_third_no]);
       
           if (complaintResult.rows.length === 0) {
             await client.query('ROLLBACK');
@@ -301,7 +301,7 @@ class VendorController {
               return res.status(404).json({ error: 'Matching record in ticket_thirdpartyclean_test not found' });
             }
       
-            // Update MTTR(final) in ticket_thirdparty
+            // Update MTTR(final) in ticket_thirdparty_test
             const updateThirdPartyQuery = `
               UPDATE ticket_thirdparty_test
               SET "MTTR(final)" = "MTTR(sec)" - $1
@@ -310,12 +310,12 @@ class VendorController {
             `;
             const thirdPartyResult = await client.query(updateThirdPartyQuery, [
               updatedComplaint['MTTR(sec)'],
-              updatedComplaint.tpty_third_no
+              tpty_third_no
             ]);
       
             if (thirdPartyResult.rows.length === 0) {
               await client.query('ROLLBACK');
-              return res.status(404).json({ error: 'Matching record in ticket_thirdparty not found' });
+              return res.status(404).json({ error: 'Matching record in ticket_thirdparty_test not found' });
             }
       
             await client.query('COMMIT');
