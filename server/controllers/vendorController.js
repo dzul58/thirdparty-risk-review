@@ -19,8 +19,8 @@ class VendorController {
                 limit = 10
             } = req.query;
     
-            let query = 'SELECT * FROM ticket_thirdparty WHERE cpdt_name = $1';
-            let countQuery = 'SELECT COUNT(*) FROM ticket_thirdparty WHERE cpdt_name = $1';
+            let query = 'SELECT * FROM ticket_thirdparty_test WHERE cpdt_name = $1';
+            let countQuery = 'SELECT COUNT(*) FROM ticket_thirdparty_test WHERE cpdt_name = $1';
             let values = [vendor];
             let conditions = [];
             let paramCount = 1;
@@ -117,8 +117,8 @@ class VendorController {
                 search
             } = req.query;
     
-            let query = 'SELECT * FROM ticket_thirdpartyclean WHERE cpdt_name = $1';
-            let countQuery = 'SELECT COUNT(*) FROM ticket_thirdpartyclean WHERE cpdt_name = $1';
+            let query = 'SELECT * FROM ticket_thirdpartyclean_test WHERE cpdt_name = $1';
+            let countQuery = 'SELECT COUNT(*) FROM ticket_thirdpartyclean_test WHERE cpdt_name = $1';
             let values = [vendor];
             let conditions = [];
             let paramCount = 1;
@@ -200,13 +200,13 @@ class VendorController {
           // Ambil nilai Month dari ticket_thirdparty
           const getMonthQuery = `
             SELECT "Month"
-            FROM ticket_thirdparty
+            FROM ticket_thirdparty_test
             WHERE tpty_third_no = $1
           `;
           const monthResult = await pool.query(getMonthQuery, [tpty_third_no]);
       
           if (monthResult.rows.length === 0) {
-            return res.status(404).json({ error: 'No matching ticket found in ticket_thirdparty' });
+            return res.status(404).json({ error: 'No matching ticket found in ticket_thirdparty_test' });
           }
       
           const Month = monthResult.rows[0].Month;
@@ -223,7 +223,7 @@ class VendorController {
             ORDER BY id_ticket_complaint DESC 
             LIMIT 1
           `;
-          const latestTicket = await pool.query(getLatestTicketQuery, [`TT${dateStr}%`]);
+          const latestTicket = await pool.query(getLatestTicketQuery, [`TC${dateStr}%`]);
           
           let ticketNumber = '01';
           if (latestTicket.rows.length > 0) {
@@ -283,9 +283,9 @@ class VendorController {
           const updatedComplaint = complaintResult.rows[0];
       
           if (status === 'accepted') {
-            // Update MTTR in ticket_thirdpartyclean
+            // Update MTTR in ticket_thirdpartyclean_test
             const updateCleanQuery = `
-              UPDATE ticket_thirdpartyclean
+              UPDATE ticket_thirdpartyclean_test
               SET "MTTR(sec)" = "MTTR(sec)" - $1
               WHERE mlink_cid_main = $2 AND "Month" = $3
               RETURNING *
@@ -298,12 +298,12 @@ class VendorController {
       
             if (cleanResult.rows.length === 0) {
               await client.query('ROLLBACK');
-              return res.status(404).json({ error: 'Matching record in ticket_thirdpartyclean not found' });
+              return res.status(404).json({ error: 'Matching record in ticket_thirdpartyclean_test not found' });
             }
       
             // Update MTTR(final) in ticket_thirdparty
             const updateThirdPartyQuery = `
-              UPDATE ticket_thirdparty
+              UPDATE ticket_thirdparty_test
               SET "MTTR(final)" = "MTTR(sec)" - $1
               WHERE tpty_third_no = $2
               RETURNING *
