@@ -253,6 +253,95 @@ class VendorController {
           res.status(500).json({ error: 'Internal server error' });
         }
       }
+
+      static async updateTicketComplaint(req, res, next) {
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+      
+          const { id_ticket_complaint } = req.params;
+          const { status } = req.body;
+      
+          if (!['accepted', 'rejected'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status. Must be "accepted" or "rejected".' });
+          }
+      
+          // Update status of ticket_complaint
+          const updateComplaintQuery = `
+            UPDATE ticket_complaint
+            SET status = $1
+            WHERE id_ticket_complaint = $2
+            RETURNING *
+          `;
+          const complaintResult = await client.query(updateComplaintQuery, [status, id_ticket_complaint]);
+      
+          if (complaintResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Ticket complaint not found' });
+          }
+      
+          const updatedComplaint = complaintResult.rows[0];
+      
+          if (status === 'accepted') {
+            // Update MTTR in ticket_thirdpartyclean
+            const updateCleanQuery = `
+              UPDATE ticket_thirdpartyclean
+              SET "MTTR(sec)" = "MTTR(sec)" - $1
+              WHERE mlink_cid_main = $2 AND "Month" = $3
+              RETURNING *
+            `;
+            const cleanResult = await client.query(updateCleanQuery, [
+              updatedComplaint['MTTR(sec)'],
+              updatedComplaint.mlink_cid_main,
+              updatedComplaint.Month
+            ]);
+      
+            if (cleanResult.rows.length === 0) {
+              await client.query('ROLLBACK');
+              return res.status(404).json({ error: 'Matching record in ticket_thirdpartyclean not found' });
+            }
+      
+            // Update MTTR(final) in ticket_thirdparty
+            const updateThirdPartyQuery = `
+              UPDATE ticket_thirdparty
+              SET "MTTR(final)" = "MTTR(sec)" - $1
+              WHERE tpty_third_no = $2
+              RETURNING *
+            `;
+            const thirdPartyResult = await client.query(updateThirdPartyQuery, [
+              updatedComplaint['MTTR(sec)'],
+              updatedComplaint.tpty_third_no
+            ]);
+      
+            if (thirdPartyResult.rows.length === 0) {
+              await client.query('ROLLBACK');
+              return res.status(404).json({ error: 'Matching record in ticket_thirdparty not found' });
+            }
+      
+            await client.query('COMMIT');
+      
+            res.status(200).json({
+              message: 'Ticket complaint updated and MTTR adjusted successfully',
+              updatedComplaint: updatedComplaint,
+              updatedCleanTicket: cleanResult.rows[0],
+              updatedThirdPartyTicket: thirdPartyResult.rows[0]
+            });
+          } else {
+            // If status is 'rejected', we only update the status
+            await client.query('COMMIT');
+            res.status(200).json({
+              message: 'Ticket complaint rejected',
+              updatedComplaint: updatedComplaint
+            });
+          }
+        } catch (error) {
+          await client.query('ROLLBACK');
+          console.error('Error in updateTicketComplaint:', error);
+          res.status(500).json({ error: 'Internal server error' });
+        } finally {
+          client.release();
+        }
+      }
 }
 
 module.exports = VendorController;
