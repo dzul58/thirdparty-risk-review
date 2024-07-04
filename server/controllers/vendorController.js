@@ -190,13 +190,27 @@ class VendorController {
     static async createTicketComplaint(req, res, next) {
         try {
           const { tpty_third_no } = req.params;
-          const { mlink_cid_main, Month, MTTR, photo, reason } = req.body;
-    
+          const { mlink_cid_main, MTTR, photo, reason } = req.body;
+      
           // Validasi input
-          if (!mlink_cid_main || !Month || !MTTR || !photo || !reason) {
+          if (!mlink_cid_main || !MTTR || !photo || !reason) {
             return res.status(400).json({ error: 'All fields are required' });
           }
-    
+      
+          // Ambil nilai Month dari ticket_thirdparty
+          const getMonthQuery = `
+            SELECT "Month"
+            FROM ticket_thirdparty
+            WHERE tpty_third_no = $1
+          `;
+          const monthResult = await pool.query(getMonthQuery, [tpty_third_no]);
+      
+          if (monthResult.rows.length === 0) {
+            return res.status(404).json({ error: 'No matching ticket found in ticket_thirdparty' });
+          }
+      
+          const Month = monthResult.rows[0].Month;
+      
           // Generate id_ticket_complaint
           const today = moment();
           const dateStr = today.format('YYYYMMDD');
@@ -216,20 +230,20 @@ class VendorController {
             const lastNumber = parseInt(latestTicket.rows[0].id_ticket_complaint.slice(-2));
             ticketNumber = (lastNumber + 1).toString().padStart(2, '0');
           }
-    
+      
           const id_ticket_complaint = `TT${dateStr}${ticketNumber}`;
-    
+      
           const insertQuery = `
             INSERT INTO ticket_complaint (
               id_ticket_complaint, mlink_cid_main, tpty_third_no, "Month", "MTTR(sec)", photo, reason, status
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING *
           `;
-    
+      
           const values = [id_ticket_complaint, mlink_cid_main, tpty_third_no, Month, MTTR, photo, reason, 'waiting'];
-    
+      
           const result = await pool.query(insertQuery, values);
-    
+      
           res.status(201).json({
             message: 'Ticket complaint created successfully',
             data: result.rows[0]
