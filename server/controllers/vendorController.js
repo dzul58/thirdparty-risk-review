@@ -190,26 +190,26 @@ class VendorController {
     static async createTicketComplaint(req, res, next) {
         try {
           const { tpty_third_no } = req.params;
-          const { mlink_cid_main, MTTR, photo, reason } = req.body;
+          const { MTTR, photo, reason } = req.body;
       
           // Validasi input
-          if (!mlink_cid_main || !MTTR || !photo || !reason) {
-            return res.status(400).json({ error: 'All fields are required' });
+          if (!MTTR || !photo || !reason) {
+            return res.status(400).json({ error: 'All fields (MTTR, photo, reason) are required' });
           }
       
-          // Ambil nilai Month dari ticket_thirdparty
-          const getMonthQuery = `
-            SELECT "Month"
+          // take value Month, mlink_cid_main, & Link from ticket_thirdparty_test
+          const getTicketInfoQuery = `
+            SELECT "Month", mlink_cid_main, "Link"
             FROM ticket_thirdparty_test
             WHERE tpty_third_no = $1
           `;
-          const monthResult = await pool.query(getMonthQuery, [tpty_third_no]);
+          const ticketInfoResult = await pool.query(getTicketInfoQuery, [tpty_third_no]);
       
-          if (monthResult.rows.length === 0) {
+          if (ticketInfoResult.rows.length === 0) {
             return res.status(404).json({ error: 'No matching ticket found in ticket_thirdparty_test' });
           }
       
-          const Month = monthResult.rows[0].Month;
+          const { Month, mlink_cid_main, Link } = ticketInfoResult.rows[0];
       
           // Generate id_ticket_complaint
           const today = moment();
@@ -231,16 +231,16 @@ class VendorController {
             ticketNumber = (lastNumber + 1).toString().padStart(2, '0');
           }
       
-          const id_ticket_complaint = `TT${dateStr}${ticketNumber}`;
+          const id_ticket_complaint = `TC${dateStr}${ticketNumber}`;
       
           const insertQuery = `
             INSERT INTO ticket_complaint (
-              id_ticket_complaint, mlink_cid_main, tpty_third_no, "Month", "MTTR(sec)", photo, reason, status
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+              id_ticket_complaint, mlink_cid_main, "Link", tpty_third_no, "Month", "MTTR(sec)", photo, reason, status
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             RETURNING *
           `;
       
-          const values = [id_ticket_complaint, mlink_cid_main, tpty_third_no, Month, MTTR, photo, reason, 'waiting'];
+          const values = [id_ticket_complaint, mlink_cid_main, Link, tpty_third_no, Month, MTTR, photo, reason, 'waiting'];
       
           const result = await pool.query(insertQuery, values);
       
