@@ -188,160 +188,174 @@ class VendorController {
     }
 
     static async createTicketComplaint(req, res, next) {
-        try {
-          const { tpty_third_no, Link, mlink_cid_main } = req.params;
+      try {
+          const { tpty_third_no, mlink_cid_main, Link } = req.params;
           const { MTTR, photo, reason } = req.body;
-      
+  
           // Validasi input
           if (!MTTR || !photo || !reason) {
-            return res.status(400).json({ error: 'All fields (MTTR, photo, reason) are required' });
+              return res.status(400).json({ error: 'All fields (MTTR, photo, reason) are required' });
           }
-      
-          // take value Month, mlink_cid_main, & Link from ticket_thirdparty_test
+  
+          // take value Month from ticket_thirdparty_test
           const getTicketInfoQuery = `
-            SELECT "Month", mlink_cid_main, "Link"
-            FROM ticket_thirdparty_test
-            WHERE tpty_third_no = $1
+              SELECT "Month"
+              FROM ticket_thirdparty_test
+              WHERE tpty_third_no = $1
           `;
           const ticketInfoResult = await pool.query(getTicketInfoQuery, [tpty_third_no]);
-      
+  
           if (ticketInfoResult.rows.length === 0) {
-            return res.status(404).json({ error: 'No matching ticket found in ticket_thirdparty_test' });
+              return res.status(404).json({ error: 'No matching ticket found in ticket_thirdparty_test' });
           }
-      
-          const { Month, mlink_cid_main, Link } = ticketInfoResult.rows[0];
-      
+  
+          const { Month } = ticketInfoResult.rows[0];
+  
           // Generate id_ticket_complaint
           const today = moment();
           const dateStr = today.format('YYYYMMDD');
           
           // Get the latest ticket number for today
           const getLatestTicketQuery = `
-            SELECT id_ticket_complaint 
-            FROM ticket_complaint 
-            WHERE id_ticket_complaint LIKE $1 
-            ORDER BY id_ticket_complaint DESC 
-            LIMIT 1
+              SELECT id_ticket_complaint 
+              FROM ticket_complaint 
+              WHERE id_ticket_complaint LIKE $1 
+              ORDER BY id_ticket_complaint DESC 
+              LIMIT 1
           `;
           const latestTicket = await pool.query(getLatestTicketQuery, [`TC${dateStr}%`]);
           
           let ticketNumber = '01';
           if (latestTicket.rows.length > 0) {
-            const lastNumber = parseInt(latestTicket.rows[0].id_ticket_complaint.slice(-2));
-            ticketNumber = (lastNumber + 1).toString().padStart(2, '0');
+              const lastNumber = parseInt(latestTicket.rows[0].id_ticket_complaint.slice(-2));
+              ticketNumber = (lastNumber + 1).toString().padStart(2, '0');
           }
-      
+  
           const id_ticket_complaint = `TC${dateStr}${ticketNumber}`;
-      
+  
           const insertQuery = `
-            INSERT INTO ticket_complaint (
+              INSERT INTO ticket_complaint (
               id_ticket_complaint, mlink_cid_main, "Link", tpty_third_no, "Month", "MTTR(sec)", photo, reason, status
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            RETURNING *
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+              RETURNING *
           `;
-      
+  
           const values = [id_ticket_complaint, mlink_cid_main, Link, tpty_third_no, Month, MTTR, photo, reason, 'waiting'];
-      
+  
           const result = await pool.query(insertQuery, values);
-      
+  
           res.status(201).json({
-            message: 'Ticket complaint created successfully',
-            data: result.rows[0]
+              message: 'Ticket complaint created successfully',
+              data: result.rows[0]
           });
-        } catch (error) {
+      } catch (error) {
           console.error('Error in createTicketComplaint:', error);
           res.status(500).json({ error: 'Internal server error' });
-        }
       }
+  }
 
-      static async updateTicketComplaint(req, res, next) {
-        const client = await pool.connect();
-        try {
-          await client.query('BEGIN');
-      
-          const { tpty_third_no } = req.params;
-          const { status } = req.body;
-      
-          if (!['accepted', 'rejected'].includes(status)) {
+  static async updateTicketComplaint(req, res, next) {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const { tpty_third_no, mlink_cid_main, Link } = req.params;
+        const { status } = req.body;
+
+        if (!['accepted', 'rejected'].includes(status)) {
             return res.status(400).json({ error: 'Invalid status. Must be "accepted" or "rejected".' });
-          }
-      
-          // Update status of ticket_complaint
-          const updateComplaintQuery = `
+        }
+
+        // Update status of ticket_complaint
+        const updateComplaintQuery = `
             UPDATE ticket_complaint
             SET status = $1
-            WHERE tpty_third_no = $2
+            WHERE tpty_third_no = $2 AND mlink_cid_main = $3 AND "Link" = $4
             RETURNING *
-          `;
-          const complaintResult = await client.query(updateComplaintQuery, [status, tpty_third_no]);
-      
-          if (complaintResult.rows.length === 0) {
+        `;
+        const complaintResult = await client.query(updateComplaintQuery, [status, tpty_third_no, mlink_cid_main, Link]);
+
+        if (complaintResult.rows.length === 0) {
             await client.query('ROLLBACK');
             return res.status(404).json({ error: 'Ticket complaint not found' });
-          }
-      
-          const updatedComplaint = complaintResult.rows[0];
-      
-          if (status === 'accepted') {
+        }
+
+        const updatedComplaint = complaintResult.rows[0];
+
+        if (status === 'accepted') {
+            // Check if the record exists in ticket_thirdpartyclean_test before updating
+            const checkCleanQuery = `
+                SELECT * FROM ticket_thirdpartyclean_test
+                WHERE mlink_cid_main = $1 AND "Month" = $2 AND "Link" = $3
+            `;
+            const checkCleanResult = await client.query(checkCleanQuery, [
+                mlink_cid_main,
+                updatedComplaint.Month,
+                Link
+            ]);
+
+            if (checkCleanResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'Matching record in ticket_thirdpartyclean_test not found' });
+            }
+
             // Update MTTR in ticket_thirdpartyclean_test
             const updateCleanQuery = `
-              UPDATE ticket_thirdpartyclean_test
-              SET "MTTR(sec)" = "MTTR(sec)" - $1
-              WHERE mlink_cid_main = $2 AND "Month" = $3
-              RETURNING *
+                UPDATE ticket_thirdpartyclean_test
+                SET "MTTR(sec)" = "MTTR(sec)" - $1
+                WHERE mlink_cid_main = $2 AND "Month" = $3 AND "Link" = $4
+                RETURNING *
             `;
             const cleanResult = await client.query(updateCleanQuery, [
-              updatedComplaint['MTTR(sec)'],
-              updatedComplaint.mlink_cid_main,
-              updatedComplaint.Month
+                updatedComplaint['MTTR(sec)'],
+                mlink_cid_main,
+                updatedComplaint.Month,
+                Link
             ]);
-      
-            if (cleanResult.rows.length === 0) {
-              await client.query('ROLLBACK');
-              return res.status(404).json({ error: 'Matching record in ticket_thirdpartyclean_test not found' });
-            }
-      
+
             // Update MTTR(final) in ticket_thirdparty_test
             const updateThirdPartyQuery = `
-              UPDATE ticket_thirdparty_test
-              SET "MTTR(final)" = "MTTR(sec)" - $1
-              WHERE tpty_third_no = $2
-              RETURNING *
+                UPDATE ticket_thirdparty_test
+                SET "MTTR(final)" = "MTTR(sec)" - $1
+                WHERE tpty_third_no = $2 AND mlink_cid_main = $3 AND "Link" = $4
+                RETURNING *
             `;
             const thirdPartyResult = await client.query(updateThirdPartyQuery, [
-              updatedComplaint['MTTR(sec)'],
-              tpty_third_no
+                updatedComplaint['MTTR(sec)'],
+                tpty_third_no,
+                mlink_cid_main,
+                Link
             ]);
-      
+
             if (thirdPartyResult.rows.length === 0) {
-              await client.query('ROLLBACK');
-              return res.status(404).json({ error: 'Matching record in ticket_thirdparty_test not found' });
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'Matching record in ticket_thirdparty_test not found' });
             }
-      
+
             await client.query('COMMIT');
-      
+
             res.status(200).json({
-              message: 'Ticket complaint updated and MTTR adjusted successfully',
-              updatedComplaint: updatedComplaint,
-              updatedCleanTicket: cleanResult.rows[0],
-              updatedThirdPartyTicket: thirdPartyResult.rows[0]
+                message: 'Ticket complaint updated and MTTR adjusted successfully',
+                updatedComplaint: updatedComplaint,
+                updatedCleanTicket: cleanResult.rows[0],
+                updatedThirdPartyTicket: thirdPartyResult.rows[0]
             });
-          } else {
-            // If status is 'rejected', we only update the status
+        } else {
+            // If status is 'rejected', only update the status
             await client.query('COMMIT');
             res.status(200).json({
-              message: 'Ticket complaint rejected',
-              updatedComplaint: updatedComplaint
+                message: 'Ticket complaint rejected',
+                updatedComplaint: updatedComplaint
             });
-          }
-        } catch (error) {
-          await client.query('ROLLBACK');
-          console.error('Error in updateTicketComplaint:', error);
-          res.status(500).json({ error: 'Internal server error' });
-        } finally {
-          client.release();
         }
+      } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error in updateTicketComplaint:', error);
+        res.status(500).json({ error: 'Internal server error' });
+      } finally {
+        client.release();
       }
+  }
 }
 
 module.exports = VendorController;
