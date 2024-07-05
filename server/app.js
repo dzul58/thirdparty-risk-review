@@ -2,9 +2,11 @@ const express = require('express');
 const app = express();
 const port = 8000;
 const cors = require('cors');
-const LoginController = require('./controllers/loginController');
 const authentication = require('./middlewares/authentication');
+const { upload } = require('./middlewares/multer');
+const LoginController = require('./controllers/loginController');
 const VendorController = require('./controllers/vendorController');
+const UploadController = require('./controllers/uploadController');
 
 app.use(cors({
   origin: ['http://localhost:3000'],
@@ -14,7 +16,7 @@ app.use(cors({
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
-// app.use('/upload_images', express.static('/home/web/upload_images'));
+app.use('/upload_images', express.static('/home/web/upload_images'));
 
 // app.get('/auto-login', LoginController.autoLogin);
 app.post(`/api/create-vendor-user`, LoginController.createVendorAccount)
@@ -24,8 +26,10 @@ app.use(authentication);
 
 app.get(`/api/ticket_thirdparty`, VendorController.getAllTicketThirdParty)
 app.get(`/api/ticket_thirdpartyclean`, VendorController.getAllTicketThirdPartyClean)
+app.post('/api/upload', upload.single('file'), UploadController.uploadFile);
 app.post('/api/complaint/:tpty_third_no/:mlink_cid_main/:Link', VendorController.createTicketComplaint);
 app.put('/api/complaint/:tpty_third_no/:mlink_cid_main/:Link', VendorController.updateTicketComplaint);
+
 
 app.listen(port, () => {
   console.log(`app listening on port ${port}`);
