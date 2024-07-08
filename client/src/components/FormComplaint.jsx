@@ -1,11 +1,14 @@
+// components/FormComplaint.jsx
+
 import React, { useState } from 'react';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 const FormComplaint = ({ item, onClose, onSubmitSuccess }) => {
   const [complaintForm, setComplaintForm] = useState({
     MTTR: '',
     reason: '',
-    photo: '',
+    photos: [],
   });
 
   const handleComplaintInputChange = (e) => {
@@ -13,21 +16,41 @@ const FormComplaint = ({ item, onClose, onSubmitSuccess }) => {
   };
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const response = await axios.post('http://localhost:8000/api/upload', formData, {
+    const files = Array.from(e.target.files);
+    const uploadPromises = files.map(file => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return axios.post('http://localhost:8000/api/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${localStorage.access_token}`,
         },
       });
-      setComplaintForm({ ...complaintForm, photo: response.data.imageUrl });
+    });
+
+    try {
+      const responses = await Promise.all(uploadPromises);
+      const newPhotos = responses.map(response => response.data.imageUrl);
+      setComplaintForm(prev => ({
+        ...prev,
+        photos: [...prev.photos, ...newPhotos],
+      }));
     } catch (error) {
-      console.error('Error uploading file:', error);
+      console.error('Error uploading files:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Upload Error',
+        text: 'There was an error uploading one or more files.',
+        confirmButtonColor: '#3085d6',
+      });
     }
+  };
+
+  const handleRemovePhoto = (indexToRemove) => {
+    setComplaintForm(prev => ({
+      ...prev,
+      photos: prev.photos.filter((_, index) => index !== indexToRemove),
+    }));
   };
 
   const handleComplaintSubmit = async (e) => {
@@ -42,10 +65,25 @@ const FormComplaint = ({ item, onClose, onSubmitSuccess }) => {
           },
         }
       );
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: 'Complaint has been successfully created.',
+        confirmButtonColor: '#3085d6',
+      });
+
       onSubmitSuccess();
       onClose();
     } catch (error) {
       console.error('Error submitting complaint:', error);
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'Something went wrong while submitting the complaint.',
+        confirmButtonColor: '#3085d6',
+      });
     }
   };
 
@@ -79,20 +117,31 @@ const FormComplaint = ({ item, onClose, onSubmitSuccess }) => {
             ></textarea>
           </div>
           <div className="mb-4">
-            <label htmlFor="photo" className="block text-sm font-medium text-gray-700">Upload Photo</label>
+            <label htmlFor="photos" className="block text-sm font-medium text-gray-700">Upload Photos</label>
             <input
               type="file"
-              id="photo"
-              name="photo"
+              id="photos"
+              name="photos"
               onChange={handleFileUpload}
               className="mt-1 block w-full"
               accept="image/*"
-              required
+              multiple
             />
           </div>
-          {complaintForm.photo && (
-            <div className="mb-4">
-              <img src={complaintForm.photo} alt="Uploaded" className="w-full h-auto" />
+          {complaintForm.photos.length > 0 && (
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              {complaintForm.photos.map((photo, index) => (
+                <div key={index} className="relative">
+                  <img src={photo} alt={`Uploaded ${index + 1}`} className="w-full h-auto" />
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePhoto(index)}
+                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                  >
+                    &times;
+                  </button>
+                </div>
+              ))}
             </div>
           )}
           <div className="flex justify-end space-x-2">
