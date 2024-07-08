@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
+import Swal from 'sweetalert2';
+import FormComplaint from '../components/FormComplaint';
 
 const LinkDetail = () => {
   const [data, setData] = useState([]);
@@ -18,7 +20,7 @@ const LinkDetail = () => {
     totalItems: 0,
     totalPages: 0,
     currentPage: 1,
-    itemsPerPage: 10,
+    itemsPerPage: 12,
   });
 
   const fetchData = useCallback(async (page = 1) => {
@@ -77,6 +79,29 @@ const LinkDetail = () => {
     });
     fetchData(1);
   };
+
+  const handleComplaintClick = (item) => {
+    setSelectedItem(item);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedItem(null);
+  };
+
+  const handleComplaintSubmitSuccess = () => {
+    fetchData();
+    Swal.fire({
+      icon: 'success',
+      title: 'Success!',
+      text: 'Complaint has been successfully created.',
+      confirmButtonColor: '#3085d6',
+    });
+  };
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   if (error) return <div className="text-center text-red-500 mt-4">{error}</div>;
 
@@ -190,9 +215,24 @@ const LinkDetail = () => {
                     <td className="py-3 px-6 text-center">
                       <span>{item?.['MTTR(final)'] ?? 'N/A'}</span>
                     </td>
+                    <td className="py-3 px-6 text-center">
+                      <button
+                        onClick={() => handleComplaintClick(item)}
+                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
+                      >
+                        Complaint
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
+              {isModalOpen && (
+               <FormComplaint
+                item={selectedItem}
+                onClose={handleModalClose}
+                onSubmitSuccess={handleComplaintSubmitSuccess}
+                />
+              )}
             </table>
           </div>
 
