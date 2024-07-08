@@ -187,6 +187,9 @@ const LinkDetail = () => {
                     <td className="py-3 px-6 text-center">
                       <span>{item?.['Hold(s)'] ?? 'N/A'}</span>
                     </td>
+                    <td className="py-3 px-6 text-center">
+                      <span>{item?.['MTTR(final)'] ?? 'N/A'}</span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
